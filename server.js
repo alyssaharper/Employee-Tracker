@@ -13,10 +13,14 @@ const employeeTracker = async () => {
     let allDepts;
     let allRoles;
     let allManagers;
+    let allEmployees;
+    let updateRoles;
     try {
         allDepts = await db.promise().query('SELECT * from department')
         allRoles = await db.promise().query('SELECT * from role')
         allManagers = await db.promise().query('SELECT * from employee')
+        allEmployees = await db.promise().query('SELECT * from employee')
+        updateRoles = await db.promise().query('SELECT * from role')
     } catch (error) {
         console.log(error)
     }
@@ -78,6 +82,20 @@ inquirer.prompt([
         message: `Please enter the new department you want to add.`,
         name: 'newDept',
         when: (answer) => answer.employeeManager === 'Add Department'
+    },
+    {
+        type: 'list',
+        message: `Which employee's role do you want to update?`,
+        name: 'employeeRole',
+        choices: allEmployees[0].map(employee => ({name:`${employee.first_name} ${employee.last_name}`, value:employee.id})),
+        when: (answer) => answer.employeeManager === 'Update Employee Role'
+    },
+    {
+        type: 'list',
+        message: `What role do you want to assign the selected employee?`,
+        name: 'updatedRole',
+        choices: updateRoles[0].map(updateRole => ({name:updateRole.title, value:role.id})),
+        when: (answer) => answer.employeeManager === 'Update Employee Role'
     }
 ]).then((data) => {
     if (data.employeeManager === 'View All Employees') {
@@ -97,7 +115,7 @@ inquirer.prompt([
         });  
     } else if (data.employeeManager === 'View All Roles') {
         db.query(`SELECT
-        role.title AS role, role.salary, department.name AS department
+        role.id AS id, role.title AS role, role.salary, department.name AS department
     FROM role
     LEFT JOIN department ON department.id = role.department_id;`, function (err, results) {
             console.table(results);
@@ -107,24 +125,33 @@ inquirer.prompt([
         db.query(`INSERT INTO department SET ?`, [{
             name:data.newDept
         }], function (err,results) {
-            console.log(results + " department added successfully!");
+            console.log("Department added successfully!");
             return employeeTracker();
         });
     } else if (data.newRole && data.salary && data.department) {
         db.query(`INSERT INTO role SET ?`, [{
             title:data.newRole, salary:data.salary, department_id:data.department
         }], function (err, results) {
-            console.log(results + " department added successfully!");
+            console.log("Role added successfully!");
             return employeeTracker();
         });
     } else if (data.firstName && data.lastName && data.role && data.managerName) {
         db.query(`INSERT INTO employee SET ?`, [{
             first_name:data.firstName, last_name:data.lastName, role_id:data.role, manager_id:data.managerName
         }], function (err, results) {
-            console.log(results + " department added successfully!");
+            console.log("Employee added successfully!");
+            return employeeTracker();
+        });
+    } else if (data.employeeRole && data.updatedRole) {
+        console.log(data.employeeRole, data.updatedRole);
+        db.query(`UPDATE employee SET ?`, [{
+            id:data.employeeRole, role_id:data.updatedRole
+        }], function (err, results) {
+            console.log(`Updated employee's role successfully!`)
             return employeeTracker();
         });
     }
 });
 };
+
 employeeTracker();

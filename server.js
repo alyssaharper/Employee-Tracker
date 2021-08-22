@@ -94,7 +94,7 @@ inquirer.prompt([
         type: 'list',
         message: `What role do you want to assign the selected employee?`,
         name: 'updatedRole',
-        choices: updateRoles[0].map(updateRole => ({name:updateRole.title, value:role.id})),
+        choices: updateRoles[0].map(role => ({name:role.title, value:role.id})),
         when: (answer) => answer.employeeManager === 'Update Employee Role'
     }
 ]).then((data) => {

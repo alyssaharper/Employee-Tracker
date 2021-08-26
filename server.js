@@ -94,7 +94,7 @@ inquirer.prompt([
         type: 'list',
         message: `What role do you want to assign the selected employee?`,
         name: 'updatedRole',
-        choices: updateRoles[0].map(role => ({name:role.title, value:role.id})),
+        choices: allRoles[0].map(role => ({name:role.title, value:role.id})),
         when: (answer) => answer.employeeManager === 'Update Employee Role'
     }
 ]).then((data) => {
@@ -102,9 +102,10 @@ inquirer.prompt([
         db.query(`SELECT 
         employee.first_name, employee.last_name, role.title AS role, department.name AS department, role.salary, manager.first_name AS manager_first_name, manager.last_name AS manager_last_name
        FROM employee
-       LEFT JOIN role ON role.id = employee.id
+       LEFT JOIN role ON role.id = employee.role_id
        LEFT JOIN department ON department.id = role.department_id
-       LEFT JOIN employee manager ON employee.manager_id = manager.id;`, function (err, results) {
+       LEFT JOIN employee manager ON employee.manager_id = manager.id
+       WHERE employee.id <> 6;`, function (err, results) {
             console.table(results);
             return employeeTracker();
         });
@@ -143,11 +144,10 @@ inquirer.prompt([
             return employeeTracker();
         });
     } else if (data.employeeRole && data.updatedRole) {
-        console.log(data.employeeRole, data.updatedRole);
-        db.query(`UPDATE employee SET ?`, [{
-            id:data.employeeRole, role_id:data.updatedRole
-        }], function (err, results) {
-            console.log(`Updated employee's role successfully!`)
+        db.query(`UPDATE employee SET role_id = ? WHERE id = ?`, [
+            data.updatedRole, data.employeeRole
+        ], function (err, results) {
+            console.log(`Updated employee's role successfully!`);
             return employeeTracker();
         });
     }
